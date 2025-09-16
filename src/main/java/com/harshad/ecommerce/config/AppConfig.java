@@ -9,6 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,32 +23,38 @@ public class AppConfig {
         http
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .cors().configurationSource(request -> {
-                    CorsConfiguration cfg = new CorsConfiguration();
-                    cfg.setAllowedOrigins(Arrays.asList(
-                            "http://localhost:3000",
-                            "http://localhost:5173",
-                            "http://localhost:4200",
-                            "https://frontendm-msowh7apg-harshads-projects-7220a8da.vercel.app"
-                    ));
-                    cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    cfg.setAllowCredentials(true);
-                    cfg.setAllowedHeaders(List.of("*"));
-                    cfg.setExposedHeaders(List.of("Authorization"));
-                    cfg.setMaxAge(3600L);
-                    return cfg;
-                })
+                .cors() // ✅ enable CORS
                 .and()
                 .csrf().disable()
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()   // ✅ allow signin/signup
+                        .requestMatchers("/auth/**").permitAll()   // allow signup/signin
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
-                // only validate JWT for protected endpoints
                 .addFilterBefore(new JwtValidator(), BasicAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // ✅ Proper CORS configuration bean
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://localhost:4200",
+                "https://frontendm-msowh7apg-harshads-projects-7220a8da.vercel.app"
+        ));
+        cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        cfg.setAllowCredentials(true);
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setExposedHeaders(List.of("Authorization"));
+        cfg.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg); // apply to all endpoints
+        return source;
     }
 
     @Bean
