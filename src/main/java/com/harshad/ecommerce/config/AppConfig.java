@@ -23,12 +23,14 @@ public class AppConfig {
         http
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .cors() // ✅ enable CORS
+                .cors() // ✅ tell Spring Security to use our CorsConfigurationSource bean
                 .and()
                 .csrf().disable()
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()   // allow signup/signin
+                        .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
+                        // ✅ allow preflight requests
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(new JwtValidator(), BasicAuthenticationFilter.class);
@@ -36,7 +38,7 @@ public class AppConfig {
         return http.build();
     }
 
-    // ✅ Proper CORS configuration bean
+    // ✅ CORS Configuration
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
@@ -47,13 +49,13 @@ public class AppConfig {
                 "https://frontendm-msowh7apg-harshads-projects-7220a8da.vercel.app"
         ));
         cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        cfg.setAllowCredentials(true);
         cfg.setAllowedHeaders(List.of("*"));
         cfg.setExposedHeaders(List.of("Authorization"));
+        cfg.setAllowCredentials(true);
         cfg.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", cfg); // apply to all endpoints
+        source.registerCorsConfiguration("/**", cfg);
         return source;
     }
 
